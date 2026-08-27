@@ -28,15 +28,31 @@ Neon gives you two endpoints and you need both:
 | **Pooled** | `-pooler` | The application. PgBouncer fronts it, so it survives many short-lived connections |
 | **Direct** | no `-pooler` | Migrations. DDL through PgBouncer is unreliable |
 
-### 3. Set them
+### 3. Set them — in the right file
+
+**Which file depends on how you run the backend, and getting this wrong fails silently.**
+
+| How you run it | File | Why |
+|---|---|---|
+| **Docker** (the default) | `infra/docker/.env` | Compose injects `DATABASE_URL` into the container as an environment variable, and pydantic-settings ranks env vars **above** `.env` files. `backend/.env` is not read inside the container at all |
+| Natively (`uv run uvicorn`) | `backend/.env` | No container, no injected env var, so the dotenv file is what loads |
 
 ```bash
-# backend/.env
+# infra/docker/.env  — Docker
 DATABASE_URL=postgresql://USER:PASS@ep-xxx-pooler.REGION.aws.neon.tech/neondb?sslmode=require
 MIGRATION_DATABASE_URL=postgresql://USER:PASS@ep-xxx.REGION.aws.neon.tech/neondb?sslmode=require
 ```
 
-Paste them exactly as the dashboard gives them. No rewriting needed — see below.
+Then `docker compose -f infra/docker/compose.yml up -d api` to pick it up.
+
+Paste both exactly as the Console gives them. No rewriting needed — see below.
+
+**Confirm which database you are actually on** (this is why the silent failure is survivable):
+
+```bash
+docker compose -f infra/docker/compose.yml exec api python -c \
+  "from app.core.config import get_settings; print(get_settings().database_url[:60])"
+```
 
 ### 4. Migrate
 
