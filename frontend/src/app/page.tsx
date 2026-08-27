@@ -18,8 +18,8 @@ export default function HomePage() {
         </h1>
 
         <p className="mb-10 text-gray-500 text-lg leading-relaxed">
-          Disposable email, without the wait. Generate a temporary inbox, catch your
-          verification code, and move on.
+          Disposable email, without the wait. Generate a temporary inbox, catch your verification
+          code, and move on.
         </p>
 
         <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-2">
@@ -27,7 +27,9 @@ export default function HomePage() {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
           </span>
-          <span className="text-gray-600 text-sm">Frontend running — inbox UI coming in Phase 1</span>
+          <span className="text-gray-600 text-sm">
+            Frontend running — inbox UI coming in Phase 1
+          </span>
         </div>
 
         <footer className="mt-16 border-gray-100 border-t pt-8">

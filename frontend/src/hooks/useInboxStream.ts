@@ -30,10 +30,7 @@ export function useInboxStream(inboxId: string | null, token: string | null) {
   useEffect(() => {
     if (!inboxId || !token) return;
 
-    const url = new URL(
-      `/api/v1/inbox/${inboxId}/stream`,
-      process.env.NEXT_PUBLIC_API_URL,
-    );
+    const url = new URL(`/api/v1/inbox/${inboxId}/stream`, process.env.NEXT_PUBLIC_API_URL);
     url.searchParams.set("token", token);
 
     const source = new EventSource(url.toString());

@@ -1,6 +1,20 @@
 {
   "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
   "organizeImports": { "enabled": true },
+  "files": {
+    "ignore": [
+      "node_modules/**",
+      ".next/**",
+      "out/**",
+      "dist/**",
+      "build/**",
+      "coverage/**",
+      "playwright-report/**",
+      "test-results/**",
+      "next-env.d.ts",
+      "pnpm-lock.yaml"
+    ]
+  },
   "linter": {
     "enabled": true,
     "rules": {

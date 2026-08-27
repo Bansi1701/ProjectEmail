@@ -7,9 +7,7 @@ export const metadata: Metadata = {
     "Generate a temporary inbox in one click. Receive your verification code, then walk away.",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
       <body className="min-h-screen bg-white text-gray-900 antialiased">{children}</body>
