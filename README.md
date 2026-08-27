@@ -64,6 +64,18 @@ That's it. Five services come up and both apps hot-reload on edit:
 
 Local mail testing uses **Mailpit** — no real domains, no real mail, nothing leaves your machine.
 
+### Neon database connection
+
+The hosted PostgreSQL database is the Neon project **ProjectEmail**. For local backend work:
+
+1. Copy `backend/.env.example` to `backend/.env`.
+2. Set `DATABASE_URL` to the pooled Neon connection URI.
+3. Change the URI scheme from `postgresql://` to `postgresql+asyncpg://`.
+4. Keep `sslmode=require`; never commit `backend/.env`.
+
+The local Docker stack continues to use its own PostgreSQL container by default. Hosted
+environments should inject `DATABASE_URL` through their secret manager.
+
 <details>
 <summary>Running without Docker</summary>
 
