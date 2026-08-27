@@ -12,12 +12,17 @@ non-negotiable security rules, and conventions — for humans and AI assistants 
 3. Run the checks for the side you touched:
 
 ```bash
+C="docker compose -f infra/docker/compose.yml"
+
 # Backend
-cd backend && uv run ruff check --fix . && uv run mypy app/ && uv run pytest
+$C exec api ruff check --fix . && $C exec api mypy app/ && $C exec api pytest
 
 # Frontend
-cd frontend && pnpm check && pnpm typecheck && pnpm test
+$C exec web pnpm check && $C exec web pnpm typecheck && $C exec web pnpm test
 ```
+
+Without Docker: `cd backend && uv run ruff check --fix . && uv run mypy app/ && uv run pytest`
+and `cd frontend && pnpm check && pnpm typecheck && pnpm test`.
 
 4. Open a PR describing what changed and why.
 

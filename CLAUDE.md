@@ -37,7 +37,7 @@ Business context, financial model and roadmap: [`docs/`](docs/).
 backend/      Python 3.12 · FastAPI · the API, SMTP consumer, MIME parsing, OTP extraction
 frontend/     TypeScript · Next.js 15 · the inbox UI and the programmatic-SEO pages
 extension/    Browser extension (Chrome/Firefox/Edge, MV3) — Phase 2
-infra/        Docker, deployment and operational scripts
+infra/        Docker Compose stack, deployment and operational scripts
 docs/         Architecture, tech-stack rationale, roadmap, security, ADRs
 ```
 
@@ -94,7 +94,9 @@ should not silently substitute an alternative mid-task. If you believe one is wr
 
 | Concern | Use |
 |---|---|
-| Containers | Docker + Docker Compose (local), same images in prod |
+| Containers | Docker multi-stage — `dev` stage for Compose, `runner` stage (non-root) deploys |
+| Local stack | Docker Compose — web, api, Postgres, Redis, Mailpit |
+| Local mail | **Mailpit** (arm64-native; MailHog is amd64-only and unmaintained) |
 | Hosting | Hetzner or Fly.io — real servers, not serverless |
 | CDN / WAF / DNS | Cloudflare |
 | Bot mitigation | Cloudflare Turnstile + WAF rate limits |
@@ -189,8 +191,33 @@ No API keys, SSP credentials, registrar tokens or database URLs in source. Ever.
 
 ## 6. Commands
 
+**Docker is the default way to run everything.** Native tooling still works if you prefer it.
+
 ```bash
-# Backend
+# The whole stack — web, api, Postgres, Redis, Mailpit. Hot-reloads on edit.
+docker compose -f infra/docker/compose.yml up
+
+#   web      http://localhost:3000
+#   api      http://localhost:8000   (docs at /docs)
+#   mailpit  http://localhost:8025   send mail to :1025, watch it arrive
+
+# Ports collide with another project? Copy infra/docker/.env.example to
+# infra/docker/.env and override only what clashes.
+
+docker compose -f infra/docker/compose.yml exec api pytest        # tests
+docker compose -f infra/docker/compose.yml exec api ruff check .
+docker compose -f infra/docker/compose.yml exec api mypy app/
+docker compose -f infra/docker/compose.yml exec api alembic upgrade head
+docker compose -f infra/docker/compose.yml logs -f api            # follow logs
+docker compose -f infra/docker/compose.yml down                   # stop
+docker compose -f infra/docker/compose.yml down -v                # stop + wipe data
+```
+
+Each Dockerfile has a `dev` stage (source mounted, hot reload) and a `runner` stage
+(non-root, healthchecked) that is what deploys. Compose targets `dev`.
+
+```bash
+# Backend — native, without Docker
 cd backend
 uv sync                                  # install
 uv run uvicorn app.main:app --reload     # dev server → :8000
@@ -209,8 +236,6 @@ pnpm test                                # Vitest
 pnpm test:e2e                            # Playwright
 pnpm check                               # Biome lint + format
 
-# Full local stack (Postgres, Redis, MailHog, api, web)
-docker compose -f infra/docker/compose.yml up
 ```
 
 ---
@@ -293,6 +318,7 @@ Named honestly, so nobody mistakes an assumption for a finding:
 | Version | Date | What |
 |---|---|---|
 | v0.1 | 2026-08-27 | Initial stack decisions, rules, conventions |
+| v0.1.2 | 2026-08-27 | Docker Compose is now the default way to run everything; Mailpit replaces MailHog (arm64) |
 | v0.1.1 | 2026-08-27 | Living-document status added. `docs/VALIDATION.md` records research findings: revenue model looks like 5–14% of plan, and ad placement on the inbox route may be policy-blocked |
 
 Add a row when you make a 🟡 or 🔴 change. 🟢 edits don't need one.

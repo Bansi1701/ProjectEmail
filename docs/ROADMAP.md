@@ -35,7 +35,7 @@ the full $18k before the first one comes back.
 
 **Goal:** working MVP on 3 test domains.
 
-- [ ] Repo, Docker Compose (Postgres, Redis, MailHog), CI
+- [x] Repo, Docker Compose (Postgres, Redis, Mailpit, api, web), CI
 - [ ] Postfix catch-all → LMTP → Python consumer (`aiosmtpd` locally)
 - [ ] MIME parsing — stdlib `email`, multipart and encodings
 - [ ] HTML sanitizing — `nh3`, strict allowlist

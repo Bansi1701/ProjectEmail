@@ -27,7 +27,9 @@ class Settings(BaseSettings):
     app_origin: str
     sandbox_origin: str
 
-    smtp_listen_host: str = "0.0.0.0"
+    # Binds all interfaces because it runs inside a container; the published port is
+    # what actually controls exposure. Never expose this directly to the internet.
+    smtp_listen_host: str = "0.0.0.0"  # noqa: S104
     smtp_listen_port: int = 1025
     max_message_size_bytes: int = 10 * 1024 * 1024
 

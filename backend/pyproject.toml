@@ -6,6 +6,7 @@ requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.32.0",
+    "gunicorn>=23.0.0",
     "pydantic>=2.9.0",
     "pydantic-settings>=2.6.0",
     "sqlalchemy[asyncio]>=2.0.36",
@@ -34,6 +35,11 @@ dev = [
     "mypy>=1.13.0",
     "types-redis>=4.6.0",
 ]
+
+[tool.uv]
+# This is a deployable application, not a distributable library. Install dependencies
+# only — there is no package to build.
+package = false
 
 [tool.ruff]
 target-version = "py312"

@@ -182,6 +182,18 @@ threshold it stops being handed to new inboxes, drains its existing ones, then r
 
 ## Local development
 
-`infra/docker/compose.yml` brings up Postgres, Redis, MailHog, the API and the web app. MailHog
-receives on `:1025` and gives a web UI on `:8025` — send a message there and watch it appear in the
-inbox. No real domains, no real mail, no risk.
+`infra/docker/compose.yml` brings up all five services — Postgres, Redis, Mailpit, the API and the
+web app — with source bind-mounted so both apps hot-reload on edit.
+
+```bash
+docker compose -f infra/docker/compose.yml up
+```
+
+**Mailpit** receives on `:1025` and gives a web UI on `:8025`. Send a message there and watch it
+travel the whole path above. No real domains, no real mail, nothing leaves the machine.
+
+Every published port is overridable via `infra/docker/.env` — developer machines run other stacks,
+and 5432 and 8000 in particular are commonly taken.
+
+Both Dockerfiles are multi-stage: the `dev` stage mounts source and hot-reloads, the `runner` stage
+runs non-root with a healthcheck and is what deploys.

@@ -23,9 +23,12 @@ def test_addresses_are_unique() -> None:
 
 
 def test_addresses_are_not_sequential() -> None:
-    a, b = generate_local_part(12), generate_local_part(12)
-    assert a != b
-    assert not (a[:-1] == b[:-1])
+    """Consecutive addresses must not share a predictable prefix.
+
+    A counter or timestamp source would leak the whole namespace from one sample.
+    """
+    samples = [generate_local_part(12) for _ in range(50)]
+    assert len({s[:6] for s in samples}) == 50
 
 
 def test_token_roundtrip() -> None:

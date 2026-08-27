@@ -21,7 +21,7 @@ verification code, and move on. Ad-supported, privacy-preserving, built to run c
 | **Data** | PostgreSQL 16 (durable) · Redis (ephemeral messages, TTL + pub/sub) |
 | **Mail** | Postfix catch-all → LMTP → Python consumer · stdlib `email` parser · `nh3` sanitizer |
 | **Real-time** | Server-Sent Events via `sse-starlette`, fanned out over Redis pub/sub |
-| **Infra** | Docker · Hetzner / Fly.io · Cloudflare (CDN, WAF, Turnstile) · Sentry |
+| **Infra** | Docker (multi-stage) · Hetzner / Fly.io · Cloudflare (CDN, WAF, Turnstile) · Sentry |
 
 Full rationale, alternatives considered and cost analysis: [`docs/TECH_STACK.md`](docs/TECH_STACK.md).
 
@@ -33,7 +33,7 @@ Full rationale, alternatives considered and cost analysis: [`docs/TECH_STACK.md`
 backend/      FastAPI app, SMTP consumer, MIME parsing, OTP extraction
 frontend/     Next.js inbox UI + programmatic-SEO pages
 extension/    Browser extension (Chrome/Firefox/Edge, MV3) — Phase 2
-infra/        Docker Compose, deployment and ops scripts
+infra/        Docker Compose stack, deployment and ops scripts
 docs/         Architecture, tech stack, roadmap, security, ADRs
 ```
 
@@ -41,29 +41,39 @@ docs/         Architecture, tech stack, roadmap, security, ADRs
 
 ## Getting started
 
-**Prerequisites:** Docker, [uv](https://docs.astral.sh/uv/), Node 20+, pnpm.
+**Only Docker is required.**
 
 ```bash
 git clone https://github.com/Bansi1701/ProjectEmail.git
 cd ProjectEmail
-cp .env.example .env          # then fill in the values
-
-# Everything at once — Postgres, Redis, MailHog, API, web
 docker compose -f infra/docker/compose.yml up
 ```
 
-Or run the two sides independently:
+That's it. Five services come up and both apps hot-reload on edit:
+
+| | URL | |
+|---|---|---|
+| **web** | http://localhost:3000 | Next.js app |
+| **api** | http://localhost:8000 | FastAPI — interactive docs at `/docs` |
+| **mailpit** | http://localhost:8025 | Send test mail to `:1025`, watch it arrive |
+| postgres | `:5432` | |
+| redis | `:6379` | |
+
+**Port already taken?** Another project on your machine may hold 5432 or 8000. Copy
+`infra/docker/.env.example` to `infra/docker/.env` and override only what clashes.
+
+Local mail testing uses **Mailpit** — no real domains, no real mail, nothing leaves your machine.
+
+<details>
+<summary>Running without Docker</summary>
+
+Needs [uv](https://docs.astral.sh/uv/), Node 20+ and pnpm, plus your own Postgres and Redis.
 
 ```bash
-# Backend → http://localhost:8000  (docs at /docs)
-cd backend && uv sync && uv run uvicorn app.main:app --reload
-
-# Frontend → http://localhost:3000
-cd frontend && pnpm install && pnpm dev
+cd backend  && uv sync && uv run uvicorn app.main:app --reload   # → :8000
+cd frontend && pnpm install && pnpm dev                          # → :3000
 ```
-
-Local mail testing uses **MailHog** on `:1025` — send a test message there and it appears in the
-inbox UI. No real mail is involved in development.
+</details>
 
 ---
 

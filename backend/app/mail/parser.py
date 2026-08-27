@@ -11,11 +11,11 @@ See docs/TECH_STACK.md.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from email import policy
 from email.message import EmailMessage
 from email.parser import BytesParser
 from email.utils import parsedate_to_datetime
-from datetime import UTC, datetime
 
 
 @dataclass(slots=True)
@@ -42,7 +42,7 @@ def parse(raw: bytes) -> ParsedEmail:
     The parser is lenient by design — real mail is malformed constantly and a temp-mail
     service that rejects imperfect messages fails at its one job.
     """
-    msg: EmailMessage = BytesParser(policy=policy.default).parsebytes(raw)  # type: ignore[assignment]
+    msg: EmailMessage = BytesParser(policy=policy.default).parsebytes(raw)
 
     text_body = ""
     html_body: str | None = None
@@ -88,7 +88,9 @@ def parse(raw: bytes) -> ParsedEmail:
 def _decode(part: EmailMessage) -> str:
     """Decode a part to text, tolerating a wrong or missing charset."""
     payload = part.get_payload(decode=True)
-    if payload is None:
+    # get_payload is typed as a union; a non-bytes result means this part carries no
+    # decodable content, which for our purposes is the same as empty.
+    if not isinstance(payload, bytes):
         return ""
     charset = part.get_content_charset() or "utf-8"
     try:
