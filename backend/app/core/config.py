@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     secret_key: str
 
     database_url: str
+    # Neon runs DDL unreliably through PgBouncer, so migrations should use the direct
+    # (unpooled) endpoint. Falls back to database_url when unset.
+    migration_database_url: str = ""
     redis_url: str
 
     # Inbox behaviour

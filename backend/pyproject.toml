@@ -51,6 +51,9 @@ ignore = ["S101"]  # assert is fine in tests
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S105", "S106"]
+# Alembic writes these. Generated DDL lines are long by nature and reformatting them
+# only makes the diff against the next autogenerate harder to read.
+"alembic/versions/*" = ["E501"]
 
 [tool.mypy]
 python_version = "3.12"

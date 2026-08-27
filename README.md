@@ -69,12 +69,21 @@ Local mail testing uses **Mailpit** — no real domains, no real mail, nothing l
 The hosted PostgreSQL database is the Neon project **ProjectEmail**. For local backend work:
 
 1. Copy `backend/.env.example` to `backend/.env`.
-2. Set `DATABASE_URL` to the pooled Neon connection URI.
-3. Change the URI scheme from `postgresql://` to `postgresql+asyncpg://`.
-4. Keep `sslmode=require`; never commit `backend/.env`.
+2. Set `DATABASE_URL` to the **pooled** Neon connection URI, pasted exactly as the Console gives it.
+3. Never commit `backend/.env` — it is gitignored.
+
+No hand-editing of the URI is needed. The `postgresql://` scheme is upgraded to
+`postgresql+asyncpg://` and the `?sslmode=require&channel_binding=require` suffix is stripped and
+translated automatically — asyncpg is not libpq and rejects those params outright. See
+[`backend/app/core/db.py`](backend/app/core/db.py).
+
+For migrations, set `MIGRATION_DATABASE_URL` to the **direct** (unpooled) endpoint; DDL through
+PgBouncer is unreliable.
 
 The local Docker stack continues to use its own PostgreSQL container by default. Hosted
 environments should inject `DATABASE_URL` through their secret manager.
+
+Full detail, including the three Neon behaviours that bite: [`docs/DATABASE.md`](docs/DATABASE.md).
 
 <details>
 <summary>Running without Docker</summary>
@@ -97,6 +106,7 @@ cd frontend && pnpm install && pnpm dev                          # → :3000
 | [`docs/TECH_STACK.md`](docs/TECH_STACK.md) | Every technology choice with rationale and alternatives |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | How mail flows from SMTP to the user's screen |
 | [`docs/SECURITY.md`](docs/SECURITY.md) | Threat model, abuse governance, compliance posture |
+| [`docs/DATABASE.md`](docs/DATABASE.md) | Neon setup, schema and migrations |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | 24-week build sequence and exit criteria |
 | [`docs/VALIDATION.md`](docs/VALIDATION.md) | Research findings on the revenue model and ad-policy risk |
 | [`docs/adr/`](docs/adr/) | Architecture Decision Records |

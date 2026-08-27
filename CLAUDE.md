@@ -270,6 +270,7 @@ pnpm check                               # Biome lint + format
 | [`docs/TECH_STACK.md`](docs/TECH_STACK.md) | Every choice above with full rationale, alternatives and costs |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | How mail flows from SMTP to the user's screen |
 | [`docs/SECURITY.md`](docs/SECURITY.md) | Threat model, abuse governance, compliance |
+| [`docs/DATABASE.md`](docs/DATABASE.md) | Neon setup, schema, migrations, and the three Neon gotchas |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | 24-week build sequence and phase exit criteria |
 | [`docs/VALIDATION.md`](docs/VALIDATION.md) | **Read this before spending money.** Research findings on the revenue model and ad-policy risk |
 | [`docs/adr/`](docs/adr/) | Architecture Decision Records |
@@ -318,6 +319,7 @@ Named honestly, so nobody mistakes an assumption for a finding:
 | Version | Date | What |
 |---|---|---|
 | v0.1 | 2026-08-27 | Initial stack decisions, rules, conventions |
+| v0.1.3 | 2026-08-27 | Database layer added — SQLAlchemy 2.0 async + Alembic, Neon-compatible. `docs/DATABASE.md` |
 | v0.1.2 | 2026-08-27 | Docker Compose is now the default way to run everything; Mailpit replaces MailHog (arm64) |
 | v0.1.1 | 2026-08-27 | Living-document status added. `docs/VALIDATION.md` records research findings: revenue model looks like 5–14% of plan, and ad placement on the inbox route may be policy-blocked |
 
