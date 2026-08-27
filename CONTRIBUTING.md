@@ -35,7 +35,7 @@ If a security test fails, fix the code — not the test.
 
 ## Architectural decisions
 
-Changing something in the [stack table](CLAUDE.md#3-the-stack--decided-not-open-for-casual-change)
+Changing something in the [stack table](CLAUDE.md#3-the-stack--current-defaults)
 needs an ADR in [`docs/adr/`](docs/adr/). Copy the format of an existing one: context, decision,
 rationale, consequences, alternatives considered.
 

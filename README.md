@@ -6,6 +6,10 @@ verification code, and move on. Ad-supported, privacy-preserving, built to run c
 > **New here? Read [`CLAUDE.md`](CLAUDE.md) first.** It is the single source of truth for what we
 > use and how we work — for both humans and AI assistants.
 
+> **Status: v0.1 — a living project.** Everything in this repo is a starting point, not a final
+> design. Stack choices, architecture and the roadmap will all change as we build and learn.
+> Improvements are expected and welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ---
 
 ## Stack at a glance

@@ -1,10 +1,15 @@
 # Tech Stack — Decisions & Rationale
 
 Every choice, why we made it, what we rejected. If you want the short version, see
-[`CLAUDE.md` §3](../CLAUDE.md#3-the-stack--decided-not-open-for-casual-change).
+[`CLAUDE.md` §3](../CLAUDE.md#3-the-stack--current-defaults).
 
 **How to change something here:** write an ADR in [`adr/`](adr/) and raise it. Do not silently
 substitute an alternative mid-task.
+
+> **Living document — v0.1.** These are current defaults chosen on today's information, not
+> permanent commitments. Several rest on assumptions we have not yet tested against real traffic
+> (see [Cost model](#cost-model)). Revisiting a choice with evidence is the process working, not a
+> deviation from it.
 
 ---
 

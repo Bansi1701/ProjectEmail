@@ -5,6 +5,10 @@ and staffing reality made explicit.
 
 **Team assumption:** 1–3 developers. **Dev budget:** $12,000–$18,000.
 
+> **Living document — v0.1.** Plans move. Dates, scope and ordering will all change once real
+> traffic and real ad revenue replace the estimates below. Update this as reality lands rather
+> than defending the original plan.
+
 ---
 
 ## Before Phase 1 — validate three assumptions

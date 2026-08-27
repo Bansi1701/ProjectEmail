@@ -4,6 +4,13 @@ The threat model for this product is unusual: **the primary untrusted input arri
 anyone on the internet, unauthenticated, by design.** We cannot refuse mail — receiving it is the
 product. Everything below follows from that.
 
+> **Living document — v0.1.** The threat model grows as the product does. Add to it whenever you
+> find a new attack surface.
+>
+> **One exception to "nothing is final":** the controls in §1 (origin isolation) and §2 (address
+> entropy) are not up for casual revision. They are load-bearing, and both are enforced by tests.
+> Changing either needs an ADR and a second reviewer.
+
 ---
 
 ## 1. Untrusted email HTML

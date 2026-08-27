@@ -2,6 +2,10 @@
 
 How a message travels from a stranger's SMTP server to a pixel on the user's screen.
 
+> **Living document — v0.1.** Describes the intended design, not a shipped system. Expect this to
+> change as real traffic teaches us things. Keep it in sync with the code; when they disagree, the
+> code is the truth and this file is the bug.
+
 ---
 
 ## The critical path

@@ -3,6 +3,11 @@
 Guidance for Claude Code (and any human) working in this repository.
 **Read this before writing code.** Deeper detail lives in [docs/](docs/) — see [Further reading](#further-reading).
 
+> ### 🟢 Living document — v0.1, not final
+> Nothing here is frozen. This is our best current thinking, written down so the team and Claude
+> pull in the same direction — not a contract. Expect it to change as we build, measure and learn.
+> **Found something wrong or outdated? Fix it.** See [§9 How this document evolves](#9-how-this-document-evolves).
+
 ---
 
 ## 1. What this project is
@@ -36,10 +41,11 @@ Do not import across them. The contract is the OpenAPI schema FastAPI generates.
 
 ---
 
-## 3. The stack — decided, not open for casual change
+## 3. The stack — current defaults
 
-These are settled decisions. If you believe one is wrong, **write an ADR in `docs/adr/` and raise it**;
-do not silently substitute an alternative mid-task.
+These are our **current defaults**, not permanent commitments — but they are settled enough that you
+should not silently substitute an alternative mid-task. If you believe one is wrong, **write an ADR in
+`docs/adr/` and raise it**. Changing a default is normal and expected; changing it quietly is not.
 
 ### Backend
 
@@ -236,3 +242,50 @@ docker compose -f infra/docker/compose.yml up
 | [`docs/SECURITY.md`](docs/SECURITY.md) | Threat model, abuse governance, compliance |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | 24-week build sequence and phase exit criteria |
 | [`docs/adr/`](docs/adr/) | Architecture Decision Records |
+
+---
+
+## 9. How this document evolves
+
+**This file is v0.1 and will be wrong about something within a month.** That is expected. It exists so
+that everyone — human or AI — starts from the same assumptions, not so that those assumptions go
+unchallenged.
+
+### Three tiers, and they are treated differently
+
+| Tier | What | How to change it |
+|---|---|---|
+| 🟢 **Just fix it** | Commands, conventions, repo layout, anything stale or wrong | Edit this file in your PR. No ceremony |
+| 🟡 **Propose it** | Stack picks in [§3](#3-the-stack--current-defaults), architecture, roadmap | ADR in [`docs/adr/`](docs/adr/) + PR. Normal and expected |
+| 🔴 **Argue it properly** | [§4 Rules 1–3](#4-non-negotiable-rules) — origin isolation, address entropy, inbound-only | ADR + a second reviewer. These are load-bearing and test-enforced |
+
+Most changes are 🟢. The red tier is small on purpose: those three encode failure modes that have
+killed real services in this category, and each is guarded by tests. A red-tier change that makes a
+security test fail means fix the code, not the test.
+
+### When you find this file wrong
+
+Update it in the same PR as the code. A doc that drifts from the codebase is worse than no doc,
+because people trust it. **If the code and this file disagree, the code is the truth and this file is
+the bug.**
+
+### What we already expect to revisit
+
+Named honestly, so nobody mistakes an assumption for a finding:
+
+- **Ad revenue assumptions.** The eCPM figures come from the business plan, not from our traffic.
+  Phase 3 replaces them with measurements. Several numbers in [`docs/TECH_STACK.md`](docs/TECH_STACK.md#cost-model) move when they do.
+- **Static generation at 50k pages.** May not hold. ISR fallback is the plan if build times blow up.
+- **Ad network approval.** We are assuming a temp-mail site can be monetized on the terms the plan
+  describes. Unvalidated.
+- **Self-hosted SMTP.** Cheap at scale, but real operational work. Worth re-examining if it becomes a
+  time sink.
+- **Redis as the only message store.** Fine now. Revisit if durability requirements change.
+
+### Changelog
+
+| Version | Date | What |
+|---|---|---|
+| v0.1 | 2026-08-27 | Initial stack decisions, rules, conventions |
+
+Add a row when you make a 🟡 or 🔴 change. 🟢 edits don't need one.

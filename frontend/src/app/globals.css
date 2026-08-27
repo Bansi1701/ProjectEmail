@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+/* White background, deliberately. This page is a shell for the inbox, and the inbox
+   sits next to ad units — a stable, neutral ground keeps ad creative legible and
+   avoids the contrast surprises that hurt viewability. */
+html,
+body {
+  background: #ffffff;
+  color: #111827;
+}
