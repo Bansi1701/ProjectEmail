@@ -1,0 +1,95 @@
+# ProjectEmail — Disposable Email Platform
+
+A temporary / disposable email service. Users generate a throwaway inbox, receive their
+verification code, and move on. Ad-supported, privacy-preserving, built to run cheaply at scale.
+
+> **New here? Read [`CLAUDE.md`](CLAUDE.md) first.** It is the single source of truth for what we
+> use and how we work — for both humans and AI assistants.
+
+---
+
+## Stack at a glance
+
+| | |
+|---|---|
+| **Backend** | Python 3.12 · FastAPI · Uvicorn · SQLAlchemy 2.0 · Pydantic v2 · uv |
+| **Frontend** | TypeScript · Next.js 15 (App Router) · Tailwind v4 · shadcn/ui · pnpm |
+| **Data** | PostgreSQL 16 (durable) · Redis (ephemeral messages, TTL + pub/sub) |
+| **Mail** | Postfix catch-all → LMTP → Python consumer · stdlib `email` parser · `nh3` sanitizer |
+| **Real-time** | Server-Sent Events via `sse-starlette`, fanned out over Redis pub/sub |
+| **Infra** | Docker · Hetzner / Fly.io · Cloudflare (CDN, WAF, Turnstile) · Sentry |
+
+Full rationale, alternatives considered and cost analysis: [`docs/TECH_STACK.md`](docs/TECH_STACK.md).
+
+---
+
+## Repo layout
+
+```
+backend/      FastAPI app, SMTP consumer, MIME parsing, OTP extraction
+frontend/     Next.js inbox UI + programmatic-SEO pages
+extension/    Browser extension (Chrome/Firefox/Edge, MV3) — Phase 2
+infra/        Docker Compose, deployment and ops scripts
+docs/         Architecture, tech stack, roadmap, security, ADRs
+```
+
+---
+
+## Getting started
+
+**Prerequisites:** Docker, [uv](https://docs.astral.sh/uv/), Node 20+, pnpm.
+
+```bash
+git clone https://github.com/Bansi1701/ProjectEmail.git
+cd ProjectEmail
+cp .env.example .env          # then fill in the values
+
+# Everything at once — Postgres, Redis, MailHog, API, web
+docker compose -f infra/docker/compose.yml up
+```
+
+Or run the two sides independently:
+
+```bash
+# Backend → http://localhost:8000  (docs at /docs)
+cd backend && uv sync && uv run uvicorn app.main:app --reload
+
+# Frontend → http://localhost:3000
+cd frontend && pnpm install && pnpm dev
+```
+
+Local mail testing uses **MailHog** on `:1025` — send a test message there and it appears in the
+inbox UI. No real mail is involved in development.
+
+---
+
+## Documentation
+
+| Document | What it covers |
+|---|---|
+| [`CLAUDE.md`](CLAUDE.md) | **Start here.** Stack decisions, non-negotiable rules, conventions |
+| [`docs/TECH_STACK.md`](docs/TECH_STACK.md) | Every technology choice with rationale and alternatives |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | How mail flows from SMTP to the user's screen |
+| [`docs/SECURITY.md`](docs/SECURITY.md) | Threat model, abuse governance, compliance posture |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | 24-week build sequence and exit criteria |
+| [`docs/adr/`](docs/adr/) | Architecture Decision Records |
+
+---
+
+## Three things to know before you write code
+
+1. **Email HTML is untrusted.** It is sanitized with `nh3` and rendered in a sandboxed iframe on a
+   separate origin. Never `allow-scripts` together with `allow-same-origin`.
+2. **We never send email.** Inbound only, permanently. It is what keeps us off blocklists.
+3. **Inbox addresses must be unguessable** and reads require a possession token. Address enumeration
+   is the classic breach in this product category.
+
+The full set is in [`CLAUDE.md` §4](CLAUDE.md#4-non-negotiable-rules).
+
+---
+
+## Contributing
+
+Conventional Commits (`feat:`, `fix:`, `docs:`…), branches named `feat/short-description`.
+Run lint, types and tests for the side you touched before opening a PR. Architectural decisions get
+an ADR in `docs/adr/`.
