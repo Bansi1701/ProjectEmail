@@ -35,16 +35,17 @@ the full $18k before the first one comes back.
 
 **Goal:** working MVP on 3 test domains.
 
-- [x] Repo, Docker Compose (Postgres, Redis, Mailpit, api, web), CI
-- [ ] Postfix catch-all → LMTP → Python consumer (`aiosmtpd` locally)
-- [ ] MIME parsing — stdlib `email`, multipart and encodings
-- [ ] HTML sanitizing — `nh3`, strict allowlist
-- [ ] OTP + verification-link extraction, bounded regex ladder
-- [ ] Redis storage with TTL; Postgres schema + Alembic
-- [ ] SSE endpoint — `sse-starlette` + Redis pub/sub
+- [x] Repo, Docker Compose (Postgres, Mailpit, api, web), CI
+- [ ] Cloudflare Email Routing Worker → authenticated FastAPI webhook ([ADR 0004](adr/0004-inbound-mail-gateway-contract.md))
+- [x] MIME parsing — stdlib `email`, multipart and encodings
+- [x] HTML sanitizing — `nh3`, strict allowlist
+- [x] OTP + verification-link extraction, bounded regex ladder
+- [x] Postgres inbox/message storage with read-time expiry, deletion sweep and Alembic
+- [x] SSE endpoint — `sse-starlette` + one-process broker for the MVP
 - [ ] Next.js inbox UI, mobile-first, one-click OTP copy
 - [ ] Sandboxed iframe on a separate origin ([`SECURITY.md`](SECURITY.md#1-untrusted-email-html))
-- [ ] Inbox address entropy + possession tokens ([`SECURITY.md`](SECURITY.md#2-inbox-enumeration--the-categorys-classic-breach))
+- [x] Inbox address entropy + possession tokens ([`SECURITY.md`](SECURITY.md#2-inbox-enumeration--the-categorys-classic-breach))
+- [x] Immediate authenticated inbox erasure
 - [ ] 3 domains live with MX; Sentry; spend caps on every metered service
 
 **Exit:** mail arrives in the open tab in **p95 < 2s**. Security rules 1 and 2 verified by test.

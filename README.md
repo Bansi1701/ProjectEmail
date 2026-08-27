@@ -18,10 +18,10 @@ verification code, and move on. Ad-supported, privacy-preserving, built to run c
 |---|---|
 | **Backend** | Python 3.12 · FastAPI · Uvicorn · SQLAlchemy 2.0 · Pydantic v2 · uv |
 | **Frontend** | TypeScript · Next.js 15 (App Router) · Tailwind v4 · shadcn/ui · pnpm |
-| **Data** | PostgreSQL 16 (durable) · Redis (ephemeral messages, TTL + pub/sub) |
-| **Mail** | Postfix catch-all → LMTP → Python consumer · stdlib `email` parser · `nh3` sanitizer |
-| **Real-time** | Server-Sent Events via `sse-starlette`, fanned out over Redis pub/sub |
-| **Infra** | Docker (multi-stage) · Hetzner / Fly.io · Cloudflare (CDN, WAF, Turnstile) · Sentry |
+| **Data** | PostgreSQL 16 / Neon · explicit message expiry and automatic cleanup |
+| **Mail** | Cloudflare Email Routing Worker → authenticated webhook · stdlib `email` parser · `nh3` sanitizer |
+| **Real-time** | Server-Sent Events via `sse-starlette`, one-process broker for the MVP |
+| **Infra** | Docker (multi-stage) · Render · GitHub Pages · Cloudflare · Sentry |
 
 Full rationale, alternatives considered and cost analysis: [`docs/TECH_STACK.md`](docs/TECH_STACK.md).
 
@@ -49,7 +49,7 @@ cd ProjectEmail
 docker compose -f infra/docker/compose.yml up
 ```
 
-That's it. Five services come up and both apps hot-reload on edit:
+That's it. Four services come up and both apps hot-reload on edit:
 
 | | URL | |
 |---|---|---|
@@ -57,7 +57,6 @@ That's it. Five services come up and both apps hot-reload on edit:
 | **api** | http://localhost:8000 | FastAPI — interactive docs at `/docs` |
 | **mailpit** | http://localhost:8025 | Send test mail to `:1025`, watch it arrive |
 | postgres | `:5432` | |
-| redis | `:6379` | |
 
 **Port already taken?** Another project on your machine may hold 5432 or 8000. Copy
 `infra/docker/.env.example` to `infra/docker/.env` and override only what clashes.
@@ -88,7 +87,7 @@ Full detail, including the three Neon behaviours that bite: [`docs/DATABASE.md`]
 <details>
 <summary>Running without Docker</summary>
 
-Needs [uv](https://docs.astral.sh/uv/), Node 20+ and pnpm, plus your own Postgres and Redis.
+Needs [uv](https://docs.astral.sh/uv/), Node 20+ and pnpm, plus Postgres.
 
 ```bash
 cd backend  && uv sync && uv run uvicorn app.main:app --reload   # → :8000
@@ -110,6 +109,7 @@ cd frontend && pnpm install && pnpm dev                          # → :3000
 | [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | How Pages, the API host and Neon fit together |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | 24-week build sequence and exit criteria |
 | [`docs/VALIDATION.md`](docs/VALIDATION.md) | Research findings on the revenue model and ad-policy risk |
+| [`docs/TRACK_A.md`](docs/TRACK_A.md) | Platform, trust, security and operations execution track |
 | [`docs/adr/`](docs/adr/) | Architecture Decision Records |
 
 ---

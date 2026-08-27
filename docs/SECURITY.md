@@ -143,7 +143,7 @@ it is.
 | Obligation | How we meet it |
 |---|---|
 | Data minimisation | Store the message, its TTL and nothing else. No account, no profile, no history |
-| Storage limitation | 10–60 minute TTL, enforced by Redis expiry rather than a deletion job we could get wrong |
+| Storage limitation | 10–60 minute TTL enforced on every read, plus a supervised Postgres deletion sweep |
 | Lawful basis (ads) | Consent, collected via a Google-certified TCF v2.2 CMP before any ad or analytics script loads |
 | Right to erasure | Effectively automatic. A user can also delete an inbox immediately |
 | Processor chain | DPAs on file with every processor — hosting, CDN, ad partners, error tracking |

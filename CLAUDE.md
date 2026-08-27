@@ -70,8 +70,8 @@ should not silently substitute an alternative mid-task. If you believe one is wr
 | Durable data | **PostgreSQL 16** + **SQLAlchemy 2.0** (async) + **Alembic** | |
 | Attachments | **S3** or **Cloudflare R2** | The database |
 | Validation | **Pydantic v2** | Hand-rolled dict validation |
-| Background jobs | **ARQ** (async, Redis-backed) | Celery — too heavy for this |
-| Rate limiting | Redis counters at the edge + **SlowAPI** | |
+| Background jobs | Supervised in-process expiry sweep (MVP); **ARQ** when shared Redis is introduced | Celery — too heavy for this |
+| Rate limiting | Edge controls + **SlowAPI** for the MVP; Redis counters when horizontally scaled | |
 | Lint + format | **Ruff** | black, isort, flake8 (Ruff replaces all three) |
 | Types | **mypy** (strict on `app/`) | |
 | Tests | **pytest** + **pytest-asyncio** + **httpx** | `unittest` |
@@ -96,7 +96,7 @@ should not silently substitute an alternative mid-task. If you believe one is wr
 | Concern | Use |
 |---|---|
 | Containers | Docker multi-stage — `dev` stage for Compose, `runner` stage (non-root) deploys |
-| Local stack | Docker Compose — web, api, Postgres, Redis, Mailpit |
+| Local stack | Docker Compose — web, api, Postgres, Mailpit |
 | Local mail | **Mailpit** (arm64-native; MailHog is amd64-only and unmaintained) |
 | Hosting | Hetzner or Fly.io — real servers, not serverless |
 | CDN / WAF / DNS | Cloudflare |
@@ -195,7 +195,7 @@ No API keys, SSP credentials, registrar tokens or database URLs in source. Ever.
 **Docker is the default way to run everything.** Native tooling still works if you prefer it.
 
 ```bash
-# The whole stack — web, api, Postgres, Redis, Mailpit. Hot-reloads on edit.
+# The whole stack — web, api, Postgres, Mailpit. Hot-reloads on edit.
 docker compose -f infra/docker/compose.yml up
 
 #   web      http://localhost:3000
@@ -314,7 +314,8 @@ Named honestly, so nobody mistakes an assumption for a finding:
   describes. Unvalidated.
 - **Self-hosted SMTP.** Cheap at scale, but real operational work. Worth re-examining if it becomes a
   time sink.
-- **Redis as the only message store.** Fine now. Revisit if durability requirements change.
+- **Postgres as the MVP message store.** Move expiry and fanout to Redis when volume or horizontal
+  scaling makes the extra service earn its cost.
 
 ### Changelog
 

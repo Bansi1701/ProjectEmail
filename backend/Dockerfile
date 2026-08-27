@@ -52,9 +52,9 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
 # Uvicorn workers under Gunicorn — see CLAUDE.md section 3.
 # Shell form so $PORT and $WEB_CONCURRENCY expand at runtime. Render, Railway and
 # Fly all assign the port themselves; a hardcoded bind fails their health checks.
-# WEB_CONCURRENCY matters on small instances — 4 workers will OOM a 512MB box.
+# In-process SSE fanout requires exactly one worker until Redis pub/sub is introduced.
 CMD ["sh", "-c", "gunicorn app.main:app \
      --worker-class uvicorn.workers.UvicornWorker \
-     --workers ${WEB_CONCURRENCY:-4} \
+     --workers ${WEB_CONCURRENCY:-1} \
      --bind 0.0.0.0:${PORT:-8000} \
      --access-logfile -"]

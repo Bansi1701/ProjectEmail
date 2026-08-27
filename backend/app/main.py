@@ -1,5 +1,6 @@
 """FastAPI application entrypoint."""
 
+import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -10,6 +11,7 @@ from app.api import v1
 from app.core.config import get_settings
 from app.core.db import check_connection, get_engine
 from app.core.migrate import upgrade_to_head
+from app.workers.expiry import run_expiry_sweeper
 
 settings = get_settings()
 
@@ -21,8 +23,18 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Touch the database on boot. On Neon this also wakes a suspended compute, so the
     # first real request does not pay the cold start.
     await check_connection()
-    yield
-    await get_engine().dispose()
+
+    sweeper_stop = asyncio.Event()
+    sweeper = asyncio.create_task(
+        run_expiry_sweeper(sweeper_stop, settings.expiry_sweep_interval_seconds),
+        name="expiry-sweeper",
+    )
+    try:
+        yield
+    finally:
+        sweeper_stop.set()
+        await sweeper
+        await get_engine().dispose()
 
 
 app = FastAPI(
@@ -45,9 +57,8 @@ app.add_middleware(
 async def health() -> dict[str, str]:
     """Liveness only — deliberately does not touch the database.
 
-    Postgres is not on the critical path: inboxes and messages live in Redis, so the
-    service still delivers mail with the database down. Failing liveness on a Neon
-    cold start would get the container killed for no reason.
+    Failing liveness on a Neon cold start would get a healthy container killed and
+    create a restart loop. Dependency health belongs on the readiness endpoint.
     """
     return {"status": "ok"}
 

@@ -35,6 +35,8 @@ class Settings(BaseSettings):
     # Inbox behaviour
     inbox_ttl_seconds: int = Field(default=3600, ge=600, le=3600)
     max_messages_per_inbox: int = 50
+    # Expired rows are already hidden by read filters; this controls physical deletion.
+    expiry_sweep_interval_seconds: int = Field(default=60, ge=10, le=3600)
     # 12 bytes -> 96 bits of entropy. Minimum 8 (64 bits) per docs/SECURITY.md section 2.
     address_entropy_bytes: int = Field(default=12, ge=8)
 

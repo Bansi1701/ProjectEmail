@@ -2,13 +2,12 @@
 
 > **Living document — v0.1.**
 
-Postgres holds only durable data: the **domain pool**, **API keys** and **aggregate
-counters**. Messages never touch it — they live in Redis under a TTL and expire on their own
-([`CLAUDE.md` Rule 4](../CLAUDE.md#rule-4-store-the-minimum-expire-it-fast)).
+For the MVP, Postgres holds the domain pool, API keys, inboxes, and messages. Inbox and message
+rows carry `expires_at`; every read filters expired data and a periodic sweeper physically deletes
+it. See [ADR 0003](adr/0003-no-redis-for-mvp.md).
 
-That split matters for the Neon decision below: **Postgres is not on the critical path.** Mail
-still gets delivered with the database down, so a serverless database that occasionally cold-starts
-is an acceptable trade here in a way it would not be for the message store.
+Postgres is therefore on the MVP critical path. The application warms Neon on boot, uses
+`pool_pre_ping`, and exposes dependency state separately at `/health/ready`.
 
 ---
 
@@ -129,6 +128,15 @@ api_keys                         public developer API, Phase 2
   id, key_hash, key_prefix, label,
   rate_limit_per_minute, last_used_at, revoked_at
   index: key_hash (unique)
+
+inboxes                          short-lived possession-token protected inboxes
+  id, address, token_hash, expires_at, created_at, updated_at
+  indexes: address (unique), expires_at
+
+messages                         sanitized short-lived inbound messages
+  id, inbox_id, sender, subject, text_body, html_body,
+  otp, verification_link, received_at, expires_at
+  indexes: (inbox_id, received_at), expires_at
 ```
 
 `domains.status` runs `warming → active → draining → retired`. Rotation drains rather than cuts:

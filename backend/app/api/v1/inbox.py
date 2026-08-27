@@ -8,7 +8,7 @@ import uuid
 from collections.abc import AsyncIterator
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sse_starlette.sse import EventSourceResponse
 
@@ -66,6 +66,16 @@ async def get_message(
         if message.id == message_id:
             return MessageDetail.model_validate(message)
     raise HTTPException(status.HTTP_404_NOT_FOUND, "message not found")
+
+
+@router.delete("/{inbox_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_inbox(
+    inbox_id: uuid.UUID, token: Annotated[str, Query()], session: SessionDep
+) -> Response:
+    """Immediately erase an inbox after verifying its possession token."""
+    inbox = await _authenticate(session, inbox_id, token)
+    await inbox_service.delete_inbox(session, inbox)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{inbox_id}/stream")

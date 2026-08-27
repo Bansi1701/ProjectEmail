@@ -19,11 +19,11 @@ How a message travels from a stranger's SMTP server to a pixel on the user's scr
                                           │
                                           ▼
                  ┌──────────────────────────────────────────────────┐
-                 │  Postfix  (catch-all virtual transport)          │
-                 │  · SPF / DKIM / DMARC verification               │
-                 │  · size limits, connection + rate caps           │
+                 │  Cloudflare Email Routing + Email Worker         │
+                 │  · catch-all MX and edge abuse controls          │
+                 │  · normalize and authenticate webhook request    │
                  └────────────────────────┬─────────────────────────┘
-                                          │  LMTP
+                                          │  HTTPS webhook
                                           ▼
                  ┌──────────────────────────────────────────────────┐
                  │  Python mail consumer   (app/mail/)              │
@@ -31,17 +31,17 @@ How a message travels from a stranger's SMTP server to a pixel on the user's scr
                  │  2. resolve inbox   does this address exist?     │
                  │  3. sanitize HTML   nh3, strict allowlist        │
                  │  4. extract OTP     regex ladder                 │
-                 │  5. store           Redis SETEX  (TTL 10–60m)    │
-                 │  6. publish         Redis PUBLISH inbox:{id}     │
+                 │  5. store           Postgres with expires_at     │
+                 │  6. publish         in-process inbox:{id}        │
                  └────────────────────────┬─────────────────────────┘
                                           │
                     ┌─────────────────────┴─────────────────────┐
                     ▼                                           ▼
         ┌────────────────────────┐                 ┌────────────────────────┐
-        │  Redis                 │                 │  PostgreSQL            │
-        │  · messages (TTL)      │                 │  · domain pool         │
-        │  · pub/sub fanout      │                 │  · API keys            │
-        │  · rate-limit counters │                 │  · aggregate counters  │
+        │  Event broker          │                 │  PostgreSQL            │
+        │  · one-process fanout  │                 │  · domain pool         │
+        │  · bounded queues      │                 │  · inboxes + messages  │
+        │  · no durable content  │                 │  · API keys            │
         └───────────┬────────────┘                 └────────────────────────┘
                     │  SUBSCRIBE
                     ▼
@@ -65,21 +65,20 @@ How a message travels from a stranger's SMTP server to a pixel on the user's scr
         └────────────────────────────────────────────────────────┘
 ```
 
-**The metric that matters:** time from SMTP `DATA` accepted to the message appearing in the user's
-open tab. Target **p95 < 2 seconds**. Everything above is shaped by that number — it is why the
-consumer publishes to pub/sub rather than the client polling, and why messages live in Redis rather
-than Postgres.
+**The metric that matters:** time from the edge accepting mail to the message appearing in the
+user's open tab. Target **p95 < 2 seconds**. The MVP keeps messages in Postgres and publishes live
+notifications through one process; ADR 0003 defines the triggers for adding Redis.
 
 ---
 
 ## Why these shapes
 
-### Redis for messages, Postgres for everything else
+### Postgres for the MVP lifecycle
 
-Messages are born to die. Redis `SETEX` gives us TTL expiry as a native primitive — no cron job, no
-vacuum, no deletion pass, no risk of a bug leaving user mail on disk for a month. Postgres holds only
-what must outlive a session: the domain pool, API keys, and aggregate counters that contain no
-message content.
+Inbox and message rows have `expires_at`. Every read rejects expired data, so a delayed cleanup
+pass cannot expose old mail; a supervised sweeper physically deletes expired inboxes and their
+cascading messages. This avoids an extra service before traffic earns it. See
+[ADR 0003](adr/0003-no-redis-for-mvp.md).
 
 ### Pub/sub, not polling
 
@@ -95,9 +94,9 @@ At target scale roughly 8 new sessions per second arrive, each holding a connect
 Polling those same sessions at a 3-second interval would instead mean ~800 req/s of almost entirely
 empty responses. Pub/sub means a worker does nothing at all until a message actually arrives.
 
-Because any app server may hold the connection while any other consumes the mail, the fanout **must**
-go through Redis pub/sub rather than in-process state. This is the constraint that stops us from
-scaling horizontally by accident and then wondering why some users never see their mail.
+The MVP broker is in-process, so **`WEB_CONCURRENCY` must remain 1**. Multiple workers or instances
+require shared pub/sub before they are enabled; otherwise a webhook can land in a different process
+from the user's stream and the notification disappears.
 
 ### SSE, not WebSockets
 
@@ -105,14 +104,12 @@ The data flow is entirely server → client. SSE gives us that over plain HTTP, 
 reconnection and no protocol upgrade to shepherd through proxies and CDNs. `EventSource` is native —
 no client library. WebSockets would add a bidirectional channel we have no use for.
 
-### Postfix in front of Python
+### An edge gateway in front of Python
 
-Postfix has spent decades absorbing the SMTP protocol's edge cases and abuse patterns. It handles
-protocol negotiation, connection limits, size caps and flood control, then hands our consumer clean
-messages over LMTP. Writing that in Python would be re-implementing a solved problem badly, on the
-one surface most exposed to hostile input.
-
-In development, `aiosmtpd` on `:1025` stands in — no Postfix needed to run locally.
+Cloudflare Email Routing accepts public SMTP and an Email Worker forwards a small normalized HTTPS
+request. FastAPI remains provider-neutral and owns MIME parsing. The boundary, authentication,
+response semantics and public-beta hardening gates are in
+[ADR 0004](adr/0004-inbound-mail-gateway-contract.md).
 
 ---
 
@@ -131,8 +128,9 @@ The only component that touches untrusted input. Order matters:
    blocked — see [`SECURITY.md`](SECURITY.md).
 4. **Extract OTP** — an ordered regex ladder, most-specific first. Codes near words like *code*,
    *verification*, *OTP*, *PIN* beat bare digit runs. Every pattern is bounded to prevent ReDoS.
-5. **Store** — `SETEX message:{inbox_id}:{msg_id}` with the inbox's TTL.
-6. **Publish** — `PUBLISH inbox:{inbox_id}` with a lightweight envelope, not the full body. Clients
+5. **Store** — a Postgres message row sharing the inbox's `expires_at`.
+6. **Publish** — publish to the in-process `inbox:{inbox_id}` channel with a lightweight envelope,
+   not the full body. Clients
    fetch the body over REST when they open the message.
 
 ### `backend/app/api/v1/` — the API
@@ -145,9 +143,10 @@ no ORM objects returned directly.
 `inbox` (creation, address generation, possession tokens), `domains` (pool health, rotation),
 `sanitize`, `otp`. This is where the testable logic lives.
 
-### `backend/app/workers/` — ARQ jobs
+### `backend/app/workers/` — supervised jobs
 
-Domain blacklist checks, pool rotation, aggregate rollups. Nothing here is on the critical path.
+The MVP runs a supervised expiry sweep in the API lifespan. Shared/background workers arrive with
+Redis when domain checks, pool rotation and aggregate rollups need retries and horizontal scale.
 
 ### `frontend/src/`
 
@@ -182,15 +181,16 @@ threshold it stops being handed to new inboxes, drains its existing ones, then r
 
 ## Local development
 
-`infra/docker/compose.yml` brings up all five services — Postgres, Redis, Mailpit, the API and the
+`infra/docker/compose.yml` brings up four services — Postgres, Mailpit, the API and the
 web app — with source bind-mounted so both apps hot-reload on edit.
 
 ```bash
 docker compose -f infra/docker/compose.yml up
 ```
 
-**Mailpit** receives on `:1025` and gives a web UI on `:8025`. Send a message there and watch it
-travel the whole path above. No real domains, no real mail, nothing leaves the machine.
+**Mailpit** receives on `:1025` and gives a web UI on `:8025` for inspecting local fixtures. The
+public ingestion path is exercised through the webhook with test RFC 5322 payloads. No real domains
+or external mail are required locally.
 
 Every published port is overridable via `infra/docker/.env` — developer machines run other stacks,
 and 5432 and 8000 in particular are commonly taken.

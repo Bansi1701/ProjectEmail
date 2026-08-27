@@ -87,39 +87,38 @@ most common wrong answer here.
 
 Sanitizing is only half the defence; see [`SECURITY.md`](SECURITY.md#1-untrusted-email-html).
 
-### Redis for ephemeral messages
+### Postgres for ephemeral messages in the MVP
 
-Messages are born to die. `SETEX` gives TTL expiry as a native primitive — no cron, no vacuum, no
-deletion pass we could get wrong and leave a month of user mail on disk. Redis also gives us the
-pub/sub fanout and rate-limit counters, so it earns its place three times over.
+Messages are born to die, but the private MVP does not yet earn a second state service. Inbox and
+message rows carry `expires_at`; reads fail closed and a supervised sweep physically deletes rows.
+Redis becomes worthwhile when shared pub/sub, distributed rate limits, or write volume require it.
+See [ADR 0003](adr/0003-no-redis-for-mvp.md).
 
-**Rejected:** Postgres for messages (we'd write the expiry job Redis gives us free), in-memory state
-(breaks the moment we run more than one app server), Memcached (no pub/sub, no persistence option).
+**Deferred:** Redis (valuable at scale, unnecessary before it), Memcached (no pub/sub or useful
+expiry/fanout combination).
 
 ### PostgreSQL + SQLAlchemy 2.0 + Alembic
 
-For the small durable surface: domain pool, API keys, aggregate counters. SQLAlchemy 2.0's async
-support is mature and its typing is genuinely good now.
+For the MVP data surface: domain pool, API keys, inboxes and short-lived messages. SQLAlchemy 2.0's
+async support is mature and its typing is genuinely good now.
 
-**No message content ever lands in Postgres.**
-
-### sse-starlette + Redis pub/sub
+### sse-starlette + an in-process MVP broker
 
 The data flow is one-way, server → client. SSE gives us that over plain HTTP with automatic browser
 reconnection and no protocol upgrade to shepherd through proxies. `EventSource` is native — no client
 library, no bundle cost.
 
-Because any app server may hold the connection while any other consumes the mail, fanout **must** go
-through Redis pub/sub rather than in-process state.
+Fanout is currently in-process and `WEB_CONCURRENCY=1` is mandatory. Before a second worker or
+instance is enabled, the broker interface moves to Redis pub/sub.
 
 **Rejected:** WebSockets (bidirectional channel we have no use for; more proxy friction), long-polling
 (same connection cost, worse latency, more complexity), interval polling (~800 req/s of empty
 responses at target scale).
 
-### ARQ for background jobs
+### Supervised jobs now, ARQ later
 
-Async-native and Redis-backed, so it shares infrastructure we already run. Domain blacklist checks,
-pool rotation, aggregate rollups — nothing on the critical path.
+The expiry sweep runs as a supervised task in the API lifespan. ARQ is the planned Redis-backed
+runner for domain blacklist checks, pool rotation and aggregate rollups when those jobs exist.
 
 **Rejected:** Celery (heavier than this workload justifies, sync-first), cron (no retries, no visibility).
 

@@ -138,6 +138,14 @@ async def list_messages(session: AsyncSession, inbox_id: uuid.UUID) -> list[Mess
     return list(result.scalars().all())
 
 
+async def delete_inbox(session: AsyncSession, inbox: Inbox) -> None:
+    """Immediately erase an authenticated inbox and all of its messages."""
+    await session.delete(inbox)
+    # Commit inside the service so a successful 204 means the erasure is durable, rather
+    # than depending on request-dependency cleanup after the response is constructed.
+    await session.commit()
+
+
 async def sweep_expired(session: AsyncSession) -> int:
     """Delete expired inboxes and their messages.
 

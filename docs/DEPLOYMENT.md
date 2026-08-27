@@ -13,8 +13,7 @@
      │
      └─── fetch / EventSource ─────►  FastAPI  (Render)
                                           │
-                                          ├──────────►  Neon      (Postgres)
-                                          └──────────►  Redis     (messages, TTL)
+                                          └──────────►  Neon      (domains, inboxes, messages)
 ```
 
 **GitHub Pages cannot connect to a database.** It is a static file host — there is no server
@@ -62,9 +61,9 @@ Everything marked `sync: false` in the blueprint must be set in the dashboard. *
 |---|---|
 | `DATABASE_URL` | Neon **pooled** URI, exactly as the Console gives it |
 | `MIGRATION_DATABASE_URL` | Neon **direct** (unpooled) URI |
-| `REDIS_URL` | Upstash or Render Redis |
 | `SANDBOX_ORIGIN` | The separate origin serving email HTML ([SECURITY.md §1](SECURITY.md#1-untrusted-email-html)) |
 | `SECRET_KEY` | Generated automatically |
+| `INBOUND_WEBHOOK_SECRET` | Generated secret shared only with the Cloudflare Email Worker |
 | `APP_ORIGIN` | Pre-set to the Pages origin. Comma-separated for more |
 
 ### 3. Migrate
@@ -104,20 +103,20 @@ look clean, which makes this a slow one to diagnose.
 The container binds `$PORT` when the platform sets one, falling back to 8000. Render, Railway and
 Fly all assign it themselves, and a hardcoded bind fails their health checks.
 
-`WEB_CONCURRENCY` controls gunicorn workers — **2 on Render free**, since four will OOM a 512MB
-instance.
+`WEB_CONCURRENCY` controls gunicorn workers and **must remain 1** while SSE fanout is in-process.
+Running two silently loses live notifications when the webhook and stream land on different workers.
 
 ---
 
 ## What is not deployed yet
 
-- **Redis** — needed before the inbox works. Upstash has a real free tier.
-- **The SMTP listener.** Render's web services do not accept inbound SMTP on port 25, so mail
-  ingestion cannot run there. It needs a VPS with a real IP, or an inbound-mail provider that
-  forwards to a webhook. **This is the piece that decides where the product actually lives.**
+- **The production Email Worker and MX routing.** Render does not accept SMTP on port 25, so
+  Cloudflare Email Routing receives mail and forwards the normalized payload to the authenticated
+  webhook described in [ADR 0004](adr/0004-inbound-mail-gateway-contract.md).
 - **The sandbox origin** for rendering email HTML.
 
-Until those exist, the deployed API serves health checks and whatever endpoints do not need mail.
+Until those exist, the deployed API can create/read/delete inboxes but cannot receive public mail or
+safely display HTML messages.
 
 ---
 
