@@ -16,6 +16,10 @@ and staffing reality made explicit.
 The business model rests on three claims that no amount of good engineering can rescue if they are
 false. Each is cheap to test and expensive to discover late.
 
+> **Update 2026-08-27:** research has now put provisional answers against all three, and they are
+> not encouraging — see [`VALIDATION.md`](VALIDATION.md). There is also a **week-0 checklist** of
+> external approvals with 2–12 week lead times that cost no dev capacity to start.
+
 | Assumption | How to test | Cost | If it fails |
 |---|---|---|---|
 | An ad network will approve and keep a temp-mail site monetized | Apply to an MCM partner / Google Certified Publishing Partner with the MVP on one domain | ~1 week, $0 | Revenue model needs restructuring — affiliate-first, not display-first |

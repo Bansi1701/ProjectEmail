@@ -20,6 +20,11 @@ tab held **active** while waiting for an OTP.
 fact drives most architectural decisions in this repo: page-load speed, ad viewability, session
 duration and SEO rank are not polish — they are the product's revenue mechanics.
 
+> ⚠️ **The revenue model is unvalidated and looks optimistic.** Research puts realistic Year-3
+> gross at 5–14% of the plan's $279k/mo, and Google's policy on ads beside email messages may
+> block the inbox placement entirely. This changes the business case, not the stack — build as
+> described, but read [`docs/VALIDATION.md`](docs/VALIDATION.md) before committing spend.
+
 **Inbound only.** The platform never sends email. See [Rule 3](#rule-3-inbound-only-never-send-mail).
 
 Business context, financial model and roadmap: [`docs/`](docs/).
@@ -241,6 +246,7 @@ docker compose -f infra/docker/compose.yml up
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | How mail flows from SMTP to the user's screen |
 | [`docs/SECURITY.md`](docs/SECURITY.md) | Threat model, abuse governance, compliance |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | 24-week build sequence and phase exit criteria |
+| [`docs/VALIDATION.md`](docs/VALIDATION.md) | **Read this before spending money.** Research findings on the revenue model and ad-policy risk |
 | [`docs/adr/`](docs/adr/) | Architecture Decision Records |
 
 ---
@@ -287,5 +293,6 @@ Named honestly, so nobody mistakes an assumption for a finding:
 | Version | Date | What |
 |---|---|---|
 | v0.1 | 2026-08-27 | Initial stack decisions, rules, conventions |
+| v0.1.1 | 2026-08-27 | Living-document status added. `docs/VALIDATION.md` records research findings: revenue model looks like 5–14% of plan, and ad placement on the inbox route may be policy-blocked |
 
 Add a row when you make a 🟡 or 🔴 change. 🟢 edits don't need one.

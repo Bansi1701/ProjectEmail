@@ -76,6 +76,7 @@ inbox UI. No real mail is involved in development.
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | How mail flows from SMTP to the user's screen |
 | [`docs/SECURITY.md`](docs/SECURITY.md) | Threat model, abuse governance, compliance posture |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | 24-week build sequence and exit criteria |
+| [`docs/VALIDATION.md`](docs/VALIDATION.md) | Research findings on the revenue model and ad-policy risk |
 | [`docs/adr/`](docs/adr/) | Architecture Decision Records |
 
 ---
