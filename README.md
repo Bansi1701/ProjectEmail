@@ -110,6 +110,7 @@ cd frontend && pnpm install && pnpm dev                          # → :3000
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | 24-week build sequence and exit criteria |
 | [`docs/VALIDATION.md`](docs/VALIDATION.md) | Research findings on the revenue model and ad-policy risk |
 | [`docs/TRACK_A.md`](docs/TRACK_A.md) | Platform, trust, security and operations execution track |
+| [`docs/TRACK_B.md`](docs/TRACK_B.md) | Product, design, accessibility, SEO and growth execution track |
 | [`docs/adr/`](docs/adr/) | Architecture Decision Records |
 
 ---

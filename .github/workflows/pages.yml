@@ -2,9 +2,8 @@ name: Deploy Pages
 
 # Rebuilds the static welcome/SEO surface on every push to main.
 #
-# Scope note: this deploys the STATIC pages only. The inbox app needs FastAPI,
-# Redis and an SMTP listener and cannot run on GitHub Pages — it deploys to a
-# real host from the Docker images. See docs/ARCHITECTURE.md.
+# Scope note: Pages serves the static public shell and client-side inbox. FastAPI,
+# Neon and the inbound Email Worker remain separate services.
 
 on:
   push:
@@ -50,11 +49,11 @@ jobs:
         # PUBLIC — every visitor can read them. Only the API's URL belongs here.
         # Never put a database URL, API key or secret in a NEXT_PUBLIC_ variable.
         #
-        # Set API_URL as a repository variable (Settings → Secrets and variables →
-        # Actions → Variables). Until the backend is deployed it falls back to the
-        # placeholder below, and the inbox simply cannot reach an API.
+        # Set API_URL and SITE_URL as repository variables when the custom domain lands.
+        # The current fallback points to the already deployed public API and Pages site.
         env:
-          NEXT_PUBLIC_API_URL: ${{ vars.API_URL || 'https://api.invalid' }}
+          NEXT_PUBLIC_API_URL: ${{ vars.API_URL || 'https://projectemail-api.onrender.com' }}
+          NEXT_PUBLIC_SITE_URL: ${{ vars.SITE_URL || 'https://bansi1701.github.io/ProjectEmail/' }}
           NEXT_PUBLIC_SANDBOX_ORIGIN: ${{ vars.SANDBOX_ORIGIN || 'https://sandbox.invalid' }}
         run: BUILD_TARGET=pages pnpm build
 
