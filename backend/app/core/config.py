@@ -26,6 +26,12 @@ class Settings(BaseSettings):
     # it the endpoint refuses to run: an open inbound endpoint lets anyone inject mail.
     inbound_webhook_secret: str = ""
 
+    # Run `alembic upgrade head` on boot. Off by default — migrating from application
+    # startup is not what you want when several instances can boot at once, since they
+    # would race. It is enabled on Render because the free plan has no Shell and no
+    # pre-deploy hook, and a single instance with one worker cannot race itself.
+    run_migrations_on_startup: bool = False
+
     # Inbox behaviour
     inbox_ttl_seconds: int = Field(default=3600, ge=600, le=3600)
     max_messages_per_inbox: int = 50

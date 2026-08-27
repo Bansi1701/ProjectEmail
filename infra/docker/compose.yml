@@ -74,6 +74,7 @@ services:
       SMTP_LISTEN_PORT: "1025"
       SMTP_HOST: mailpit
       INBOUND_WEBHOOK_SECRET: dev-webhook-secret
+      RUN_MIGRATIONS_ON_STARTUP: "true"
     ports: ["${API_PORT:-8000}:8000"]
     volumes:
       # Source mounted for hot reload. The anonymous volume keeps the image's .venv

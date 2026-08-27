@@ -9,12 +9,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import v1
 from app.core.config import get_settings
 from app.core.db import check_connection, get_engine
+from app.core.migrate import upgrade_to_head
 
 settings = get_settings()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    if settings.run_migrations_on_startup:
+        await upgrade_to_head()
     # Touch the database on boot. On Neon this also wakes a suspended compute, so the
     # first real request does not pay the cold start.
     await check_connection()

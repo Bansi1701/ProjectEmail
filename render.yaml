@@ -38,6 +38,10 @@ services:
         value: "1"
       - key: PYTHONUNBUFFERED
         value: "1"
+      # Render's free plan has no Shell and no pre-deploy hook, so migrations run on
+      # boot. Safe only because this is one instance with one worker.
+      - key: RUN_MIGRATIONS_ON_STARTUP
+        value: "true"
 
       # --- Set these in the Render dashboard. Never commit them. ---
       # Neon POOLED connection string, pasted exactly as the Console gives it.
