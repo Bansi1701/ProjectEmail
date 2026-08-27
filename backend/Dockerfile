@@ -47,11 +47,14 @@ USER app
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health').status==200 else 1)"
+    CMD python -c "import os,urllib.request,sys; p=os.getenv('PORT','8000'); sys.exit(0 if urllib.request.urlopen(f'http://127.0.0.1:{p}/health').status==200 else 1)"
 
 # Uvicorn workers under Gunicorn — see CLAUDE.md section 3.
-CMD ["gunicorn", "app.main:app", \
-     "--worker-class", "uvicorn.workers.UvicornWorker", \
-     "--workers", "4", \
-     "--bind", "0.0.0.0:8000", \
-     "--access-logfile", "-"]
+# Shell form so $PORT and $WEB_CONCURRENCY expand at runtime. Render, Railway and
+# Fly all assign the port themselves; a hardcoded bind fails their health checks.
+# WEB_CONCURRENCY matters on small instances — 4 workers will OOM a 512MB box.
+CMD ["sh", "-c", "gunicorn app.main:app \
+     --worker-class uvicorn.workers.UvicornWorker \
+     --workers ${WEB_CONCURRENCY:-4} \
+     --bind 0.0.0.0:${PORT:-8000} \
+     --access-logfile -"]

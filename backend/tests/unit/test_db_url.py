@@ -78,3 +78,33 @@ def test_is_neon_detection() -> None:
     assert not is_neon("db.example.com")
     # Must not match a lookalike domain.
     assert not is_neon("neon.tech.evil.com")
+
+
+def test_cors_origins_single() -> None:
+    s = _settings(app_origin="http://localhost:3000")
+    assert s.cors_origins == ["http://localhost:3000"]
+
+
+def test_cors_origins_multiple_and_trimmed() -> None:
+    """The Pages site and the app's own domain are different origins; both must pass."""
+    s = _settings(app_origin="https://bansi1701.github.io, https://tempmail.example ")
+    assert s.cors_origins == ["https://bansi1701.github.io", "https://tempmail.example"]
+
+
+def test_cors_origins_ignores_empty_entries() -> None:
+    s = _settings(app_origin="https://a.example,,https://b.example,")
+    assert s.cors_origins == ["https://a.example", "https://b.example"]
+
+
+def _settings(**overrides: str):
+    from app.core.config import Settings
+
+    base = {
+        "secret_key": "x",
+        "database_url": "postgresql+asyncpg://u:p@localhost/db",
+        "redis_url": "redis://localhost:6379/0",
+        "app_origin": "http://localhost:3000",
+        "sandbox_origin": "http://localhost:8001",
+    }
+    base.update(overrides)
+    return Settings(**base)  # type: ignore[arg-type]

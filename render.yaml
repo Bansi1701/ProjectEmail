@@ -1,0 +1,55 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+#
+# Deploys the FastAPI backend. The frontend stays on GitHub Pages (static), and the
+# two talk over HTTPS. See docs/DEPLOYMENT.md.
+#
+# Secrets are NEVER in this file. Anything marked `sync: false` must be set in the
+# Render dashboard — that includes the Neon connection string.
+
+services:
+  - type: web
+    name: projectemail-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    # Builds the deployable stage, not `dev`.
+    dockerCommand: ""
+    plan: free
+    region: oregon
+    branch: main
+    # Only rebuild when the backend actually changes.
+    buildFilter:
+      paths:
+        - backend/**
+        - render.yaml
+    # Liveness only — deliberately does not touch the database, so a Neon cold start
+    # cannot cause Render to kill the container.
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      # 512MB / 0.1 CPU on the free plan. Four gunicorn workers will OOM it.
+      - key: WEB_CONCURRENCY
+        value: "2"
+      - key: PYTHONUNBUFFERED
+        value: "1"
+
+      # --- Set these in the Render dashboard. Never commit them. ---
+      # Neon POOLED connection string, pasted exactly as the Console gives it.
+      - key: DATABASE_URL
+        sync: false
+      # Neon DIRECT (unpooled) endpoint — DDL through PgBouncer is unreliable.
+      - key: MIGRATION_DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: REDIS_URL
+        sync: false
+      # Comma-separated. Must include the GitHub Pages origin or the browser blocks
+      # every request with a CORS error.
+      - key: APP_ORIGIN
+        value: https://bansi1701.github.io
+      - key: SANDBOX_ORIGIN
+        sync: false

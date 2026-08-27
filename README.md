@@ -107,6 +107,7 @@ cd frontend && pnpm install && pnpm dev                          # → :3000
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | How mail flows from SMTP to the user's screen |
 | [`docs/SECURITY.md`](docs/SECURITY.md) | Threat model, abuse governance, compliance posture |
 | [`docs/DATABASE.md`](docs/DATABASE.md) | Neon setup, schema and migrations |
+| [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | How Pages, the API host and Neon fit together |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | 24-week build sequence and exit criteria |
 | [`docs/VALIDATION.md`](docs/VALIDATION.md) | Research findings on the revenue model and ad-policy risk |
 | [`docs/adr/`](docs/adr/) | Architecture Decision Records |

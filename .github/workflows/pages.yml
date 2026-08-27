@@ -46,6 +46,16 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Build static export
+        # NEXT_PUBLIC_* values are baked into the client bundle at build time and are
+        # PUBLIC — every visitor can read them. Only the API's URL belongs here.
+        # Never put a database URL, API key or secret in a NEXT_PUBLIC_ variable.
+        #
+        # Set API_URL as a repository variable (Settings → Secrets and variables →
+        # Actions → Variables). Until the backend is deployed it falls back to the
+        # placeholder below, and the inbox simply cannot reach an API.
+        env:
+          NEXT_PUBLIC_API_URL: ${{ vars.API_URL || 'https://api.invalid' }}
+          NEXT_PUBLIC_SANDBOX_ORIGIN: ${{ vars.SANDBOX_ORIGIN || 'https://sandbox.invalid' }}
         run: BUILD_TARGET=pages pnpm build
 
       # Jekyll drops every _next/ directory without this, and the site loads unstyled.

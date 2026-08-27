@@ -27,8 +27,15 @@ class Settings(BaseSettings):
     address_entropy_bytes: int = Field(default=12, ge=8)
 
     # Email HTML MUST render on a different origin than the app. See SECURITY.md section 1.
+    # app_origin accepts a comma-separated list: the GitHub Pages site and the app's own
+    # domain are different origins, and both need to pass CORS.
     app_origin: str
     sandbox_origin: str
+
+    @property
+    def cors_origins(self) -> list[str]:
+        """Allowed browser origins, in the order given."""
+        return [o.strip() for o in self.app_origin.split(",") if o.strip()]
 
     # Binds all interfaces because it runs inside a container; the published port is
     # what actually controls exposure. Never expose this directly to the internet.
