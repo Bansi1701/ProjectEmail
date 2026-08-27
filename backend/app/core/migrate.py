@@ -22,8 +22,9 @@ logger = logging.getLogger(__name__)
 
 def _upgrade_sync() -> None:
     """Blocking Alembic upgrade. Must not be called on the event loop."""
-    from alembic import command
     from alembic.config import Config
+
+    from alembic import command
 
     # alembic.ini sits at the backend root, one level above app/.
     ini = Path(__file__).resolve().parents[2] / "alembic.ini"
