@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api import v1
 from app.core.config import get_settings
 from app.core.db import check_connection, get_engine
 
@@ -55,5 +56,4 @@ async def readiness() -> dict[str, object]:
     return {"status": "ok" if db_ok else "degraded", "database": "up" if db_ok else "down"}
 
 
-# Routers are registered here as they land:
-# app.include_router(inbox.router, prefix="/api/v1")
+app.include_router(v1.router)

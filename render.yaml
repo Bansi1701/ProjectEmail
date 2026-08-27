@@ -30,9 +30,12 @@ services:
         value: production
       - key: LOG_LEVEL
         value: INFO
-      # 512MB / 0.1 CPU on the free plan. Four gunicorn workers will OOM it.
+      # MUST be 1. Fanout to SSE connections is in-process for the MVP, so a webhook
+      # landing on worker A while the user's stream is held by worker B means that user
+      # never sees their mail. On 0.1 CPU one async worker is the right shape anyway.
+      # See docs/adr/0003-no-redis-for-mvp.md.
       - key: WEB_CONCURRENCY
-        value: "2"
+        value: "1"
       - key: PYTHONUNBUFFERED
         value: "1"
 
@@ -45,11 +48,13 @@ services:
         sync: false
       - key: SECRET_KEY
         generateValue: true
-      - key: REDIS_URL
-        sync: false
       # Comma-separated. Must include the GitHub Pages origin or the browser blocks
       # every request with a CORS error.
       - key: APP_ORIGIN
         value: https://bansi1701.github.io
       - key: SANDBOX_ORIGIN
         sync: false
+      # Shared secret the Cloudflare Email Worker presents. The webhook refuses to run
+      # without it — an open inbound endpoint lets anyone inject mail into any inbox.
+      - key: INBOUND_WEBHOOK_SECRET
+        generateValue: true

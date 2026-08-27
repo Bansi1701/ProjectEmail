@@ -64,8 +64,9 @@ should not silently substitute an alternative mid-task. If you believe one is wr
 | Inbound SMTP (dev) | **aiosmtpd** on `:1025` | |
 | MIME parsing | **stdlib `email`** (`BytesParser` + `policy.default`) | `mail-parser`, `flanker` — the stdlib is better and has no CVE surface of its own |
 | HTML sanitizing | **nh3** | **`bleach` is archived/deprecated — never add it** |
-| Ephemeral messages | **Redis** with native `EXPIRE` (TTL 10–60 min) | Storing messages in Postgres |
-| Live push | **sse-starlette** + Redis **pub/sub** | Long-polling; WebSockets (one-way is all we need) |
+| Ephemeral messages | **Postgres** with `expires_at` (MVP) → Redis at scale | — see [ADR 0003](docs/adr/0003-no-redis-for-mvp.md) |
+| Live push | **sse-starlette** + in-process broker (MVP) → Redis pub/sub at scale | Long-polling; WebSockets (one-way is all we need) |
+| Workers | **`WEB_CONCURRENCY=1`** while fanout is in-process | More than 1 worker — it silently breaks delivery |
 | Durable data | **PostgreSQL 16** + **SQLAlchemy 2.0** (async) + **Alembic** | |
 | Attachments | **S3** or **Cloudflare R2** | The database |
 | Validation | **Pydantic v2** | Hand-rolled dict validation |
@@ -320,6 +321,7 @@ Named honestly, so nobody mistakes an assumption for a finding:
 | Version | Date | What |
 |---|---|---|
 | v0.1 | 2026-08-27 | Initial stack decisions, rules, conventions |
+| v0.1.5 | 2026-08-27 | MVP drops Redis — messages in Postgres, in-process fanout, `WEB_CONCURRENCY=1`. Inbox + webhook API live end-to-end |
 | v0.1.4 | 2026-08-27 | Deployment wired — Render blueprint for the API, Pages build gets the API URL, CORS accepts multiple origins |
 | v0.1.3 | 2026-08-27 | Database layer added — SQLAlchemy 2.0 async + Alembic, Neon-compatible. `docs/DATABASE.md` |
 | v0.1.2 | 2026-08-27 | Docker Compose is now the default way to run everything; Mailpit replaces MailHog (arm64) |

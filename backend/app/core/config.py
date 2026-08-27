@@ -18,7 +18,13 @@ class Settings(BaseSettings):
     # Neon runs DDL unreliably through PgBouncer, so migrations should use the direct
     # (unpooled) endpoint. Falls back to database_url when unset.
     migration_database_url: str = ""
-    redis_url: str
+    # Not used in the MVP — messages live in Postgres and fanout is in-process.
+    # Set this when moving to multiple workers. See docs/adr/0003-no-redis-for-mvp.md.
+    redis_url: str = ""
+
+    # Shared secret the Cloudflare Email Worker presents on the inbound webhook. Without
+    # it the endpoint refuses to run: an open inbound endpoint lets anyone inject mail.
+    inbound_webhook_secret: str = ""
 
     # Inbox behaviour
     inbox_ttl_seconds: int = Field(default=3600, ge=600, le=3600)
