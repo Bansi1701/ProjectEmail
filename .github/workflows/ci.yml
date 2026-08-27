@@ -1,0 +1,138 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# A new push to the same branch cancels the in-flight run — no point burning
+# minutes on a commit that is already superseded.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend — ruff, mypy, pytest
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.5.11"
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Ruff (lint)
+        run: uv run ruff check --output-format=github .
+
+      - name: Ruff (format check)
+        run: uv run ruff format --check .
+
+      - name: mypy
+        run: uv run mypy app/
+
+      - name: pytest
+        run: uv run pytest -q
+
+  frontend:
+    name: Frontend — biome, tsc, vitest, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.14.2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Biome (lint + format)
+        run: pnpm biome ci .
+
+      - name: TypeScript
+        run: pnpm typecheck
+
+      - name: Build
+        run: pnpm build
+
+  docker:
+    name: Docker — images build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      # Build the deployable stage, not `dev` — that is the one that has to work.
+      - name: Build api image
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          target: runner
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build web image
+        uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          target: runner
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  guardrails:
+    name: Security guardrails
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # These encode CLAUDE.md section 4. They are cheap greps, and each one has
+      # killed a real service in this category.
+      - name: No allow-same-origin on the email iframe (Rule 1)
+        run: |
+          # Matches the attribute in real markup only. A bare substring search would
+          # hit the warning comments that exist precisely to prevent this.
+          if grep -rnE 'sandbox=[\"'"'"'`][^\"'"'"'`]*allow-same-origin' \
+               --include='*.tsx' --include='*.ts' --include='*.py' --include='*.html' \
+               frontend/src backend/app 2>/dev/null; then
+            echo "::error::allow-same-origin is set on a sandbox attribute. Combined with allow-scripts it defeats the sandbox entirely. See docs/SECURITY.md section 1."
+            exit 1
+          fi
+          echo "ok — no allow-same-origin in any sandbox attribute"
+
+      - name: No SMTP client dependency (Rule 3)
+        run: |
+          if grep -nE '^\s*"(aiosmtplib|yagmail|sendgrid|mailgun|boto3-ses|postmarker)' backend/pyproject.toml; then
+            echo "::error::An outbound-mail library was added. This platform is inbound-only. See docs/SECURITY.md section 3."
+            exit 1
+          fi
+          echo "ok — no outbound mail library"
+
+      - name: No committed secrets (Rule 6)
+        run: |
+          if git ls-files | grep -E '(^|/)\.env$'; then
+            echo "::error::A .env file is tracked. Secrets must never be committed."
+            exit 1
+          fi
+          echo "ok — no tracked .env"
